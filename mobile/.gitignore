@@ -1,0 +1,10 @@
+node_modules/
+.expo
+.idea
+google-services.json
+ios
+.gradle
+local.properties
+checkapp.iml
+android
+package-lock.json
