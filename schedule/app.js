@@ -62,15 +62,17 @@ const main = async () => {
             }).catch(err => {
                 return wirteLog({ status: 'failed:' + err }, account, password, companyName, latitude, longitude, path);
             });
+        tasks.push(task);
     });
+    return {};
 }
 
-
+console.log('start app!', new Date().toLocaleString());
 main().then(async () => {
     while (tasks.length) {
         let task = tasks.pop();
         await task;
     }
-    console.log('finish app!');
+    console.log('finish app!', new Date().toLocaleString();
     process.exit(0);
 });
