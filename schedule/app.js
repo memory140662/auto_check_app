@@ -19,20 +19,21 @@ const check = async (account, password, companyName, latitude, longitude) => {
         pushCard = await pushCard.login();
         let status = null;
         if (now.getHours() <= 10) {
-            status = await pc.checkIn();
+            status = await pushCard.checkIn();
         } else if (now.getHours() >= 18) {
-            status = await pc.checkOut();
+            status = await pushCard.checkOut();
         }
         return status;
     } catch (e) {
+        console.error('check err:', e);
         return { status: 'failed' };
     }
 }
 
-const wirteLog = (status, account, password, companyName, latitude, longitude, path) => {
+const wirteLog = (status, account, password, companyName, latitude, longitude, path, days) => {
     return app.database()
         .ref('users').child(path).set({
-            account, password, companyName, latitude, longitude,
+            account, password, companyName, latitude, longitude, days,
             logger: {
                 status,
                 time: now.toLocaleString()
@@ -55,12 +56,12 @@ const main = async () => {
         .orderByChild(`days/${DAYS[now.getDay()]}`)
         .equalTo(true)
         .once('value');
-    _.mapKeys(snapshot.val(), ({ account, password, companyName, latitude, longitude }, path) => {
+    _.mapKeys(snapshot.val(), ({ account, password, companyName, latitude, longitude, days }, path) => {
         let task = check(account, password, companyName, latitude, longitude)
             .then(({ status }) => {
-                return wirteLog(status, account, password, companyName, latitude, longitude, path);
+                return wirteLog(status, account, password, companyName, latitude, longitude, path, days);
             }).catch(err => {
-                return wirteLog({ status: 'failed:' + err }, account, password, companyName, latitude, longitude, path);
+                return wirteLog({ status: 'failed:' + err }, account, password, companyName, latitude, longitude, path, days);
             });
         tasks.push(task);
     });
@@ -69,10 +70,11 @@ const main = async () => {
 
 console.log('start app!', new Date().toLocaleString());
 main().then(async () => {
+    console.log("count:", tasks.length);
     while (tasks.length) {
         let task = tasks.pop();
         await task;
     }
-    console.log('finish app!', new Date().toLocaleString();
+    console.log('finish app!', new Date().toLocaleString());
     process.exit(0);
-});
+}, err => console.log("main err:", err));
