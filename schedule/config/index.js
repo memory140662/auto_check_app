@@ -8,11 +8,13 @@ if (process.env.NODE_ENV === 'production') {
             storageBucket: process.env.STORAGE_BUCKET,
             messagingSenderId: process.env.MESSAGING_SENDER_ID
         },
-        data: require('./data.json')
+        data: require('./data.json'),
+        govOpen: require('./govOpen')
     }
 } else {
     module.exports = {
         config: require('./config'),
-        data: require('./data.json')
+        data: require('./data.json'),
+        govOpen: require('./govOpen')
     }
 }

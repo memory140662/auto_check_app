@@ -1,6 +1,8 @@
 const firebase = require('firebase');
-const { config } = require('./config');
+const request = require('request');
 const _ = require('lodash');
+
+const { config, govOpen } = require('./config');
 const PushCard = require('./Models/PushCard');
 
 const DAYS = [
@@ -16,7 +18,7 @@ const app = firebase.initializeApp(config);
 const check = async (account, password, companyName, latitude, longitude) => {
     try {
         let pushCard = new PushCard(account, password, companyName, latitude, longitude);
-        pushCard = await pushCard.login();
+        await pushCard.login();
         let status = null;
         if (now.getHours() <= 10) {
             status = await pushCard.checkIn();
@@ -41,11 +43,28 @@ const wirteLog = (status, account, password, companyName, latitude, longitude, p
         });
 }
 
-const test = (i) => {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve(i)
-        }, 3000 * Math.random());
+let holiday = null;
+const checkHoliday = async (today) => {
+    if (holiday !== null) {
+        return holiday;
+    }
+    return new Promise((resolve, reject) => {
+        request.get(govOpen.calendarUrl, (err, res, body) => {
+            if (err || res.statusCode !== 200) {
+                console.err('checkHoliday error: ', res.statusCode, err);
+                return reject('checkHoliday error:' + (err || 'status code: ' + res.statusCode ));
+            }
+            const { success, result: { records } } = JSON.parse(body);
+            if (success) {
+                holiday = _.filter(records, ({ date, isHoliday }) =>
+                    date === `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`
+                    && isHoliday === '是'
+                ).length > 0;
+                resolve(holiday);
+            } else {
+                reject('check holiday falied');
+            }
+        });
     });
 }
 
@@ -56,14 +75,25 @@ const main = async () => {
         .orderByChild(`days/${DAYS[now.getDay()]}`)
         .equalTo(true)
         .once('value');
-    _.mapKeys(snapshot.val(), ({ account, password, companyName, latitude, longitude, days }, path) => {
-        let task = check(account, password, companyName, latitude, longitude)
-            .then(({ status }) => {
-                return wirteLog(status, account, password, companyName, latitude, longitude, path, days);
-            }).catch(err => {
-                return wirteLog({ status: 'failed:' + err }, account, password, companyName, latitude, longitude, path, days);
-            });
-        tasks.push(task);
+    let isHoliday;
+    _.mapKeys(snapshot.val(), async ({ account, password, companyName, latitude, longitude, days, isCalendar }, path) => {
+        try {
+            isHoliday = null;
+            if (isCalendar) {
+                isHoliday = await checkHoliday(now);
+            }
+            if (isHoliday !== false) {
+                let task = check(account, password, companyName, latitude, longitude)
+                    .then(({ status }) => {
+                        return wirteLog(status, account, password, companyName, latitude, longitude, path, days);
+                    }).catch(err => {
+                        return wirteLog({ status: 'failed:' + err }, account, password, companyName, latitude, longitude, path, days);
+                    });
+                tasks.push(task);
+            }
+        } catch (e) {
+            return wirteLog({ status: 'failed:' + e }, account, password, companyName, latitude, longitude, path, days);
+        }
     });
     return {};
 }
