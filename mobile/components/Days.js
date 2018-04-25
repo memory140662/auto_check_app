@@ -14,14 +14,15 @@ const DAYS = [
     { label: "Sun", name: "sun" },
 ];
 
-const Days = ({ days, onValueChange }) => (
+const Days = ({ days, onValueChange, isCalendar }) => (
     <Aux>
-        {_.map(DAYS, ({ label, defaultValue, name }) => (
+        {_.map(DAYS, ({ label, name }) => (
             <Field
                 key={name}
                 label={label}
                 type="switch"
-                value={days && days[name]}
+                disabled={isCalendar}
+                value={days && days[name] || isCalendar}
                 onValueChange={isOpen => onValueChange({
                     days: {
                         ...days,

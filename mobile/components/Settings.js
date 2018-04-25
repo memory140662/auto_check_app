@@ -26,7 +26,8 @@ const SETTINGS = [
     'days',
     'latitude',
     'longitude',
-    'companyName'
+    'companyName',
+    'isCalendar'
 ];
 class Settings extends React.Component {
 
@@ -77,7 +78,9 @@ class Settings extends React.Component {
 
     refreshHandler = () => {
         this.props.retrieveSettings(this.state.prevSettings);
-        this.props.fetchStatus(this.state.prevSettings.account, this.state.prevSettings.password);
+        if (this.state.prevSettings.account && this.state.prevSettings.password) {
+            this.props.fetchStatus(this.state.prevSettings.account, this.state.prevSettings.password);
+        }
     }
 
     renderMessage = () => {
@@ -129,8 +132,17 @@ class Settings extends React.Component {
                             longitude
                         })}
                     />
+                     <Field
+                        label="Check Government Calendar"
+                        value={settings.isCalendar}
+                        type="switch"
+                        onValueChange={isCalendar => this.props.changeSettings({
+                            isCalendar
+                        })}
+                    />
                     <Days
                         days={settings.days}
+                        isCalendar={settings.isCalendar}
                         onValueChange={this.props.changeSettings}
                     />
                 </Aux>

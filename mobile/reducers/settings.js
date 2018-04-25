@@ -20,6 +20,7 @@ const initState = {
     error: false,
     companyName: 'techlink',
     changing: false,
+    isCalendar: false
 }
 
 const reducer = (state = initState, action) => {

@@ -7,14 +7,18 @@ import {
     Switch
 } from 'react-native';
 
-const Field = ({ type, label, isSecure, onValueChange, value, keyboardType }) => {
+const Field = ({ type, label, isSecure, onValueChange, value, keyboardType, disabled }) => {
 
     let field = null;
 
     switch (type) {
         case 'switch':
             field = (
-                <Switch onValueChange={onValueChange} value={value} />
+                <Switch 
+                    onValueChange={onValueChange} 
+                    value={value}
+                    disabled={disabled}
+                />
             );
             break;
         default:
