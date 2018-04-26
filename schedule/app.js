@@ -32,10 +32,10 @@ const check = async (account, password, companyName, latitude, longitude) => {
     }
 }
 
-const wirteLog = (status, account, password, companyName, latitude, longitude, path, days) => {
+const wirteLog = (status, account, password, companyName, latitude, longitude, path, days, isCalendar) => {
     return app.database()
         .ref('users').child(path).set({
-            account, password, companyName, latitude, longitude, days,
+            account, password, companyName, latitude, longitude, days, isCalendar,
             logger: {
                 status,
                 time: now.toLocaleString()
@@ -76,7 +76,7 @@ const main = async () => {
         .equalTo(true)
         .once('value');
     let isHoliday;
-    _.mapKeys(snapshot.val(), async ({ account, password, companyName, latitude, longitude, days, isCalendar }, path) => {
+    _.mapKeys(snapshot.val(), async ({ account, password, companyName, latitude, longitude, days, isCalendar = null }, path) => {
         try {
             isHoliday = null;
             if (isCalendar) {
@@ -85,14 +85,14 @@ const main = async () => {
             if (isHoliday !== false) {
                 let task = check(account, password, companyName, latitude, longitude)
                     .then(({ status }) => {
-                        return wirteLog(status, account, password, companyName, latitude, longitude, path, days);
+                        return wirteLog(status, account, password, companyName, latitude, longitude, path, days, isCalendar);
                     }).catch(err => {
-                        return wirteLog({ status: 'failed:' + err }, account, password, companyName, latitude, longitude, path, days);
+                        return wirteLog({ status: 'failed:' + err }, account, password, companyName, latitude, longitude, path, days, isCalendar);
                     });
                 tasks.push(task);
             }
         } catch (e) {
-            return wirteLog({ status: 'failed:' + e }, account, password, companyName, latitude, longitude, path, days);
+            return wirteLog({ status: 'failed:' + e }, account, password, companyName, latitude, longitude, path, days, isCalendar);
         }
     });
     return {};
